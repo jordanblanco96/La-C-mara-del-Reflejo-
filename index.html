@@ -733,14 +733,16 @@
       swatchRow.appendChild(s);
     });
 
-    // Pintar sigilo y reproducir sonido de resultado si está habilitado
+    // Pintar sigilo
     paintSigil(document.getElementById('sigil-result'), winner);
-    if (soundEnabled) {
-      const ok = await tryPlayWithRetries(resultSound, 3, 200);
-      if(!ok) ensurePlayOnInteraction();
-    }
 
+    // Mostrar resultado primero, luego reproducir sonido si está habilitado
     showScreen('result');
+    
+    // Reproducir sonido de resultado sin bloquear la visualización
+    if (soundEnabled) {
+      tryPlayWithRetries(resultSound, 3, 200).catch(() => {});
+    }
   }
 
   // Reinicio desde la pantalla de resultado
