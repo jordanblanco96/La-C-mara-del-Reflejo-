@@ -140,7 +140,7 @@
     border-radius: 4px;
     padding: 40px 34px;
     text-align:center;
-    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(201,162,39,0.1);
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.8);
     backdrop-filter: blur(10px);
   }
 
@@ -337,13 +337,43 @@
   }
   .btn-ghost:hover{ background: rgba(201,162,39,0.08); }
 
+  .sound-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(201,162,39,0.2);
+    border: 2px solid var(--gold);
+    color: var(--gold);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sound-toggle:hover {
+    background: rgba(201,162,39,0.4);
+    transform: scale(1.1);
+  }
+
+  .sound-toggle:active {
+    transform: scale(0.95);
+  }
+
   @media (max-width: 480px){
-    body{
-      background-attachment: scroll;
-    }
     .panel{ padding: 30px 22px; }
     h1.title{ font-size: 1.4rem; }
     .result-house{ font-size: 1.7rem; }
+    .sound-toggle {
+      bottom: 15px;
+      right: 15px;
+      width: 45px;
+      height: 45px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -353,6 +383,21 @@
 </style>
 </head>
 <body>
+
+<!-- Audio Elements -->
+<audio id="bgMusic" loop>
+  <source src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_8e74130b24.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="transitionSound">
+  <source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_8d5c5e6a6d.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="resultSound">
+  <source src="https://cdn.pixabay.com/download/audio/2022/01/18/audio_8db2b59f9b.mp3" type="audio/mpeg">
+</audio>
+
+<button class="sound-toggle" id="soundToggle" title="Activar/Desactivar sonido">🔊</button>
 
 <div class="stage">
 
@@ -407,6 +452,9 @@
     <div class="sigil-wrap">
       <div class="sigil" id="sigil-result">
         <svg viewBox="0 0 200 200">
+          <defs>
+            <clipPath id="clip-circle"><circle cx="100" cy="100" r="70"/></clipPath>
+          </defs>
           <g clip-path="url(#clip-circle)">
             <path class="core" data-house="sapientia" d="M100,100 L100,30 A70,70 0 0,1 170,100 Z" fill="#3a3f4c"/>
             <path class="core" data-house="thalassus" d="M100,100 L170,100 A70,70 0 0,1 100,170 Z" fill="#33394a"/>
@@ -494,12 +542,34 @@
   let current = 0;
   let userName = "";
   const scores = { sapientia:0, thalassus:0, ambitus:0, ursus:0 };
+  let soundEnabled = true;
 
   const screens = {
     welcome: document.getElementById('screen-welcome'),
     quiz: document.getElementById('screen-quiz'),
     result: document.getElementById('screen-result')
   };
+
+  // Audio elements
+  const bgMusic = document.getElementById('bgMusic');
+  const transitionSound = document.getElementById('transitionSound');
+  const resultSound = document.getElementById('resultSound');
+  const soundToggle = document.getElementById('soundToggle');
+
+  // Sound control
+  soundToggle.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+    if (soundEnabled) {
+      bgMusic.play().catch(() => {});
+    } else {
+      bgMusic.pause();
+    }
+  });
+
+  // Play background music on load
+  bgMusic.volume = 0.3;
+  bgMusic.play().catch(() => {});
 
   function showScreen(name){
     Object.values(screens).forEach(s => s.classList.remove('active'));
@@ -524,6 +594,7 @@
     current = 0;
     ORDER.forEach(h => scores[h] = 0);
     showScreen('quiz');
+    if(soundEnabled) transitionSound.play().catch(() => {});
     renderQuestion();
   }
 
@@ -557,6 +628,7 @@
   function selectOption(house){
     scores[house]++;
     current++;
+    if(soundEnabled) transitionSound.play().catch(() => {});
     if(current < QUESTIONS.length){
       renderQuestion();
     } else {
@@ -584,13 +656,19 @@
     const winner = computeWinner();
     const info = HOUSES[winner];
 
-    document.getElementById('result-greeting').textContent = "La Cámara ha visto en ti a alguien de";
+    // Texto y visuales
+    const greetingLine = document.getElementById('result-greeting');
+    greetingLine.textContent = userName + ", la Cámara ha visto en ti a alguien de";
+
     document.getElementById('result-anim').textContent = info.anim;
-    document.getElementById('result-house').textContent = info.name;
-    document.getElementById('result-house').style.color = info.a;
+    const houseEl = document.getElementById('result-house');
+    houseEl.textContent = info.name;
+    houseEl.style.color = info.a;
+
     document.getElementById('result-trait').textContent = info.trait;
     document.getElementById('result-mottos').innerHTML = info.mottos.join("<br>");
 
+    // Swatches
     const swatchRow = document.getElementById('result-swatches');
     swatchRow.innerHTML = "";
     [info.a, info.b].forEach(c => {
@@ -600,16 +678,22 @@
       swatchRow.appendChild(s);
     });
 
-    const greetingLine = document.getElementById('result-greeting');
-    greetingLine.textContent = userName + ", la Cámara ha visto en ti a alguien de";
-
+    // Pintar sigilo y reproducir sonido de resultado si está habilitado
     paintSigil(document.getElementById('sigil-result'), winner);
+    if (soundEnabled) {
+      try { resultSound.currentTime = 0; resultSound.play(); } catch(e) {}
+    }
+
     showScreen('result');
   }
 
+  // Reinicio desde la pantalla de resultado
   document.getElementById('btn-restart').addEventListener('click', () => {
     nameInput.value = "";
     btnStart.disabled = true;
+    // opcional: reiniciar puntajes por si el usuario vuelve a empezar sin recargar
+    ORDER.forEach(h => scores[h] = 0);
+    if (soundEnabled) transitionSound.play().catch(() => {});
     showScreen('welcome');
   });
 
