@@ -673,16 +673,18 @@
         const btn = document.createElement('button');
         btn.className = 'option';
         btn.textContent = opt;
-        btn.addEventListener('click', () => selectOption(ORDER[i]));
+        btn.addEventListener('click', () => {
+          scores[ORDER[i]]++;
+          current++;
+          onOptionSelected();
+        });
         optionsContainer.appendChild(btn);
       });
       optionsContainer.style.opacity = "1";
     }, 150);
   }
 
-  function selectOption(house){
-    scores[house]++;
-    current++;
+  function onOptionSelected(){
     if(soundEnabled) tryPlayWithRetries(transitionSound).catch(()=>{});
     if(current < QUESTIONS.length){
       renderQuestion();
@@ -707,7 +709,7 @@
     });
   }
 
-  async function showResult(){
+  function showResult(){
     const winner = computeWinner();
     const info = HOUSES[winner];
 
@@ -736,7 +738,7 @@
     // Pintar sigilo
     paintSigil(document.getElementById('sigil-result'), winner);
 
-    // Mostrar resultado primero, luego reproducir sonido si está habilitado
+    // Mostrar resultado
     showScreen('result');
     
     // Reproducir sonido de resultado sin bloquear la visualización
