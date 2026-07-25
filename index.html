@@ -385,15 +385,15 @@
 <body>
 
 <!-- Audio Elements -->
-<audio id="bgMusic" loop>
+<audio id="bgMusic" preload="auto" crossorigin="anonymous" loop>
   <source src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_8e74130b24.mp3" type="audio/mpeg">
 </audio>
 
-<audio id="transitionSound">
+<audio id="transitionSound" preload="auto" crossorigin="anonymous">
   <source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_8d5c5e6a6d.mp3" type="audio/mpeg">
 </audio>
 
-<audio id="resultSound">
+<audio id="resultSound" preload="auto" crossorigin="anonymous">
   <source src="https://cdn.pixabay.com/download/audio/2022/01/18/audio_8db2b59f9b.mp3" type="audio/mpeg">
 </audio>
 
@@ -556,20 +556,75 @@
   const resultSound = document.getElementById('resultSound');
   const soundToggle = document.getElementById('soundToggle');
 
+  // load flags
+  let bgLoaded = false, transitionLoaded = false, resultLoaded = false;
+
+  bgMusic.addEventListener('canplaythrough', () => { bgLoaded = true; });
+  transitionSound.addEventListener('canplaythrough', () => { transitionLoaded = true; });
+  resultSound.addEventListener('canplaythrough', () => { resultLoaded = true; });
+
+  [bgMusic, transitionSound, resultSound].forEach(el => {
+    el.addEventListener('error', (e) => console.warn('Audio error:', el.id, e));
+  });
+
+  // remember preference
+  try{
+    const stored = localStorage.getItem('reflejo_sound');
+    if(stored !== null) soundEnabled = stored === '1';
+    soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+  }catch(e){ /* ignore */ }
+
+  function savePreference(){
+    try{ localStorage.setItem('reflejo_sound', soundEnabled ? '1' : '0'); }catch(e){}
+  }
+
+  // Safe play with retries
+  async function tryPlayWithRetries(el, attempts = 3, delay = 300){
+    if(!el) return false;
+    for(let i=0;i<attempts;i++){
+      try{ el.currentTime = 0; await el.play(); return true; }
+      catch(e){ await new Promise(r => setTimeout(r, delay)); }
+    }
+    return false;
+  }
+
+  // attempt play on first user interaction if autoplay blocked
+  let interactionHandlerAdded = false;
+  function ensurePlayOnInteraction(){
+    if(interactionHandlerAdded) return;
+    interactionHandlerAdded = true;
+    const onFirstInteract = async () => {
+      try{
+        if(soundEnabled){
+          await tryPlayWithRetries(bgMusic, 2, 200);
+        }
+      }catch(e){}
+      document.removeEventListener('click', onFirstInteract);
+      document.removeEventListener('keydown', onFirstInteract);
+    };
+    document.addEventListener('click', onFirstInteract);
+    document.addEventListener('keydown', onFirstInteract);
+  }
+
   // Sound control
-  soundToggle.addEventListener('click', () => {
+  soundToggle.addEventListener('click', async () => {
     soundEnabled = !soundEnabled;
     soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+    savePreference();
     if (soundEnabled) {
-      bgMusic.play().catch(() => {});
+      // try to play background music, if blocked wait for interaction
+      const ok = await tryPlayWithRetries(bgMusic, 3, 300);
+      if(!ok) ensurePlayOnInteraction();
     } else {
-      bgMusic.pause();
+      try{ bgMusic.pause(); }catch(e){}
     }
   });
 
-  // Play background music on load
+  // Play background music on load if preference allows
   bgMusic.volume = 0.3;
-  bgMusic.play().catch(() => {});
+  if(soundEnabled){
+    tryPlayWithRetries(bgMusic).then(ok => { if(!ok) ensurePlayOnInteraction(); });
+  }
 
   function showScreen(name){
     Object.values(screens).forEach(s => s.classList.remove('active'));
@@ -594,7 +649,7 @@
     current = 0;
     ORDER.forEach(h => scores[h] = 0);
     showScreen('quiz');
-    if(soundEnabled) transitionSound.play().catch(() => {});
+    if(soundEnabled) tryPlayWithRetries(transitionSound).catch(()=>{});
     renderQuestion();
   }
 
@@ -628,7 +683,7 @@
   function selectOption(house){
     scores[house]++;
     current++;
-    if(soundEnabled) transitionSound.play().catch(() => {});
+    if(soundEnabled) tryPlayWithRetries(transitionSound).catch(()=>{});
     if(current < QUESTIONS.length){
       renderQuestion();
     } else {
@@ -652,7 +707,7 @@
     });
   }
 
-  function showResult(){
+  async function showResult(){
     const winner = computeWinner();
     const info = HOUSES[winner];
 
@@ -681,7 +736,8 @@
     // Pintar sigilo y reproducir sonido de resultado si está habilitado
     paintSigil(document.getElementById('sigil-result'), winner);
     if (soundEnabled) {
-      try { resultSound.currentTime = 0; resultSound.play(); } catch(e) {}
+      const ok = await tryPlayWithRetries(resultSound, 3, 200);
+      if(!ok) ensurePlayOnInteraction();
     }
 
     showScreen('result');
@@ -693,7 +749,7 @@
     btnStart.disabled = true;
     // opcional: reiniciar puntajes por si el usuario vuelve a empezar sin recargar
     ORDER.forEach(h => scores[h] = 0);
-    if (soundEnabled) transitionSound.play().catch(() => {});
+    if (soundEnabled) tryPlayWithRetries(transitionSound).catch(()=>{});
     showScreen('welcome');
   });
 
