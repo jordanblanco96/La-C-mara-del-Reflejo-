@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Cámara del Reflejo — Arcanum Aetherium</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+  :root{
+    --void: #0b0e14;
+    --surface: #12161f;
+    --surface-2: #1a1f2b;
+    --gold: #c9a227;
+    --gold-soft: rgba(201,162,39,0.35);
+    --ink: #ece7d8;
+    --ink-dim: #a9a495;
+
+    --sapientia-a: #8b6fd9;
+    --sapientia-b: #f2efe6;
+    --thalassus-a: #3f8f63;
+    --thalassus-b: #e3bd3f;
+    --ambitus-a: #a5352a;
+    --ambitus-b: #17110f;
+    --ursus-a: #6e4b30;
+    --ursus-b: #5c7a52;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,162,39,0.08), transparent 60%),
+      var(--void);
+    color: var(--ink);
+    font-family: 'Crimson Pro', serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .stage{
+    width:100%;
+    max-width: 560px;
+  }
+
+  .screen{ display:none; animation: fade .6s ease both; }
+  .screen.active{ display:block; }
+
+  @keyframes fade{
+    from{ opacity:0; transform: translateY(8px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  h1,h2,h3{
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin: 0;
+  }
+
+  .eyebrow{
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-align:center;
+    margin-bottom: 10px;
+  }
+
+  /* ---- Sigil ---- */
+  .sigil-wrap{
+    display:flex;
+    justify-content:center;
+    margin: 6px 0 22px;
+  }
+  .sigil{
+    width: 132px;
+    height: 132px;
+    position:relative;
+  }
+  .sigil svg{ width:100%; height:100%; filter: drop-shadow(0 0 18px rgba(201,162,39,0.18)); }
+  .sigil .core{
+    transform-origin: 100px 100px;
+    transition: fill 1.2s ease;
+  }
+  .sigil-ring{
+    fill:none;
+    stroke: var(--gold-soft);
+    stroke-width: 1;
+  }
+
+  /* ---- Welcome ---- */
+  .panel{
+    background: linear-gradient(180deg, var(--surface), var(--surface-2));
+    border: 1px solid rgba(201,162,39,0.18);
+    border-radius: 4px;
+    padding: 40px 34px;
+    text-align:center;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+
+  h1.title{ font-size: 1.7rem; color: var(--ink); }
+  .subtitle{
+    font-size: 1rem;
+    color: var(--ink-dim);
+    font-style: italic;
+    margin-top: 6px;
+    margin-bottom: 26px;
+  }
+
+  .lede{
+    font-size: 1.02rem;
+    line-height: 1.65;
+    color: var(--ink-dim);
+    margin-bottom: 30px;
+  }
+
+  label.field-label{
+    display:block;
+    font-family:'Cinzel',serif;
+    font-size: 0.68rem;
+    letter-spacing:0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+    text-align:left;
+  }
+
+  input[type="text"]{
+    width:100%;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(201,162,39,0.3);
+    border-radius: 2px;
+    color: var(--ink);
+    font-family:'Crimson Pro', serif;
+    font-size: 1.1rem;
+    padding: 13px 16px;
+    text-align:center;
+    outline:none;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  input[type="text"]:focus{
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,162,39,0.15);
+  }
+  input[type="text"]::placeholder{ color: rgba(236,231,216,0.35); }
+
+  .btn{
+    font-family:'Cinzel', serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--void);
+    background: linear-gradient(180deg, #e0bd4c, var(--gold));
+    border:none;
+    border-radius: 2px;
+    padding: 15px 28px;
+    cursor:pointer;
+    margin-top: 26px;
+    width:100%;
+    transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+  }
+  .btn:hover:not(:disabled){ filter: brightness(1.08); box-shadow: 0 8px 24px -8px rgba(201,162,39,0.55); }
+  .btn:active:not(:disabled){ transform: scale(0.98); }
+  .btn:disabled{ opacity:0.35; cursor:not-allowed; }
+  .btn:focus-visible{ outline: 2px solid var(--gold); outline-offset: 3px; }
+
+  /* ---- Quiz ---- */
+  .progress-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom: 28px;
+  }
+  .progress-track{
+    flex:1;
+    height:2px;
+    background: rgba(201,162,39,0.15);
+    position:relative;
+  }
+  .progress-fill{
+    position:absolute; left:0; top:0; bottom:0;
+    background: var(--gold);
+    width:10%;
+    transition: width .4s ease;
+  }
+  .progress-num{
+    font-family:'Cinzel',serif;
+    font-size:0.72rem;
+    letter-spacing:0.1em;
+    color: var(--ink-dim);
+    white-space:nowrap;
+  }
+
+  .question{
+    font-family:'Cinzel', serif;
+    font-size: 1.15rem;
+    font-weight: 500;
+    line-height:1.5;
+    color: var(--ink);
+    margin-bottom: 24px;
+    text-align:center;
+  }
+
+  .options{ display:flex; flex-direction:column; gap:10px; }
+  .option{
+    text-align:left;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(236,231,216,0.14);
+    color: var(--ink);
+    font-family:'Crimson Pro', serif;
+    font-size: 1.02rem;
+    padding: 15px 18px;
+    border-radius: 2px;
+    cursor:pointer;
+    transition: border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  .option:hover{ border-color: var(--gold-soft); background: rgba(201,162,39,0.06); }
+  .option:active{ transform: scale(0.99); }
+  .option:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  /* ---- Result ---- */
+  .result-house{
+    font-family:'Cinzel', serif;
+    font-size: 2.1rem;
+    text-align:center;
+    margin: 4px 0 2px;
+  }
+  .result-anim{
+    text-align:center;
+    font-size: 2.6rem;
+    line-height:1;
+    margin-bottom: 4px;
+  }
+  .result-greeting{
+    text-align:center;
+    color: var(--ink-dim);
+    font-size: 1.05rem;
+    margin-bottom: 18px;
+  }
+  .result-mottos{
+    text-align:center;
+    font-style: italic;
+    color: var(--ink-dim);
+    font-size: 0.98rem;
+    line-height:1.7;
+    margin-bottom: 22px;
+  }
+  .result-trait{
+    text-align:center;
+    font-family:'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color: var(--gold);
+    margin-bottom: 26px;
+  }
+  .swatch-row{ display:flex; justify-content:center; gap:8px; margin-bottom: 28px; }
+  .swatch{ width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); }
+
+  .btn-ghost{
+    background:transparent;
+    border: 1px solid rgba(201,162,39,0.4);
+    color: var(--gold);
+    font-family:'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    padding: 12px 20px;
+    border-radius:2px;
+    cursor:pointer;
+    width:100%;
+    margin-top:12px;
+    transition: background .15s ease;
+  }
+  .btn-ghost:hover{ background: rgba(201,162,39,0.08); }
+
+  @media (max-width: 480px){
+    .panel{ padding: 30px 22px; }
+    h1.title{ font-size: 1.4rem; }
+    .result-house{ font-size: 1.7rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .screen{ animation:none; }
+    .btn, .option, .progress-fill, .sigil .core{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- WELCOME -->
+  <section id="screen-welcome" class="screen active">
+    <div class="eyebrow">Arcanum Aetherium</div>
+    <div class="sigil-wrap">
+      <div class="sigil" id="sigil-welcome">
+        <svg viewBox="0 0 200 200">
+          <defs>
+            <clipPath id="clip-circle"><circle cx="100" cy="100" r="70"/></clipPath>
+          </defs>
+          <g clip-path="url(#clip-circle)">
+            <path class="core" data-house="sapientia" d="M100,100 L100,30 A70,70 0 0,1 170,100 Z" fill="#3a3f4c"/>
+            <path class="core" data-house="thalassus" d="M100,100 L170,100 A70,70 0 0,1 100,170 Z" fill="#33394a"/>
+            <path class="core" data-house="ambitus" d="M100,100 L100,170 A70,70 0 0,1 30,100 Z" fill="#3a3f4c"/>
+            <path class="core" data-house="ursus" d="M100,100 L30,100 A70,70 0 0,1 100,30 Z" fill="#33394a"/>
+          </g>
+          <circle class="sigil-ring" cx="100" cy="100" r="70"/>
+          <circle cx="100" cy="100" r="7" fill="#c9a227"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h1 class="title">La Cámara del Reflejo</h1>
+      <div class="subtitle">donde Aurora reconoce a los suyos</div>
+      <p class="lede">
+        Antes de cruzar el umbral, la Cámara necesita saber tu nombre.
+        Lo que respondas después no se juzga — solo se refleja.
+      </p>
+      <label class="field-label" for="name-input">Tu nombre</label>
+      <input type="text" id="name-input" placeholder="Escribe tu nombre" maxlength="40" autocomplete="off">
+      <button class="btn" id="btn-start" disabled>Entrar a la Cámara</button>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="screen-quiz" class="screen">
+    <div class="panel">
+      <div class="progress-row">
+        <span class="progress-num" id="progress-num">1 / 10</span>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+      <div class="question" id="question-text"></div>
+      <div class="options" id="options-container"></div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="screen-result" class="screen">
+    <div class="sigil-wrap">
+      <div class="sigil" id="sigil-result">
+        <svg viewBox="0 0 200 200">
+          <g clip-path="url(#clip-circle)">
+            <path class="core" data-house="sapientia" d="M100,100 L100,30 A70,70 0 0,1 170,100 Z" fill="#3a3f4c"/>
+            <path class="core" data-house="thalassus" d="M100,100 L170,100 A70,70 0 0,1 100,170 Z" fill="#33394a"/>
+            <path class="core" data-house="ambitus" d="M100,100 L100,170 A70,70 0 0,1 30,100 Z" fill="#3a3f4c"/>
+            <path class="core" data-house="ursus" d="M100,100 L30,100 A70,70 0 0,1 100,30 Z" fill="#33394a"/>
+          </g>
+          <circle class="sigil-ring" cx="100" cy="100" r="70"/>
+          <circle cx="100" cy="100" r="7" fill="#c9a227"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="result-greeting" id="result-greeting"></div>
+      <div class="result-anim" id="result-anim"></div>
+      <div class="result-house" id="result-house"></div>
+      <div class="result-trait" id="result-trait"></div>
+      <div class="result-mottos" id="result-mottos"></div>
+      <div class="swatch-row" id="result-swatches"></div>
+      <button class="btn" id="btn-restart">Volver a mirar el reflejo</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+
+  const HOUSES = {
+    sapientia: {
+      name: "Sapientia",
+      anim: "🐴",
+      trait: "Curiosidad · Humildad · Pensamiento crítico",
+      mottos: ['"El saber que no se comparte, se marchita"', '"Preguntar es el primer hechizo"'],
+      a: "#8b6fd9", b: "#f2efe6"
+    },
+    thalassus: {
+      name: "Thalassus",
+      anim: "🐍",
+      trait: "Audacia · Adaptabilidad · Libertad",
+      mottos: ['"La corriente no teme a lo desconocido"', '"Donde otros ven límite, nosotros vemos camino"'],
+      a: "#3f8f63", b: "#e3bd3f"
+    },
+    ambitus: {
+      name: "Ambitus",
+      anim: "🐉",
+      trait: "Ambición · Disciplina · Voluntad",
+      mottos: ['"El poder se forja, no se hereda"', '"Ninguna cima es demasiado alta"'],
+      a: "#a5352a", b: "#17110f"
+    },
+    ursus: {
+      name: "Ursus",
+      anim: "🐻",
+      trait: "Lealtad · Sacrificio · Arraigo",
+      mottos: ['"Nadie cae mientras haya un Ursus cerca"', '"Raíces profundas, manada unida"'],
+      a: "#6e4b30", b: "#5c7a52"
+    }
+  };
+
+  const ORDER = ["sapientia","thalassus","ambitus","ursus"];
+
+  const QUESTIONS = [
+    { q: "Encuentras una puerta cerrada con un mensaje extraño tallado. ¿Qué haces?",
+      opts: ["Investigo el mensaje antes de tocar nada","La abro para ver qué hay dentro","La derribo, no tengo tiempo que perder","Reviso si alguien más la necesita antes que yo"] },
+    { q: "Un compañero comete un error grave frente a todos. ¿Cómo reaccionas?",
+      opts: ["Le explico en privado qué salió mal y por qué","Le resto importancia, todos se equivocan","Le señalo que debió prepararse mejor","Me pongo a su lado antes de que otros lo juzguen"] },
+    { q: "Tienes que elegir entre un camino seguro y uno desconocido para llegar más rápido.",
+      opts: ["Analizo ambos antes de decidir","Tomo el desconocido, la certeza aburre","Tomo el que me dé ventaja, sin importar el riesgo","Tomo el seguro, no quiero poner en riesgo a quien me acompaña"] },
+    { q: "Ganas una competencia importante. ¿Qué es lo primero que piensas?",
+      opts: ["Qué aprendí del proceso","Ya quiero el siguiente reto","Esto es solo el comienzo de algo más grande","Se lo dedico a quienes me apoyaron"] },
+    { q: "Alguien te pide ayuda pero implica romper una regla.",
+      opts: ["Busco una forma de ayudar sin romperla","Rompo la regla, las reglas se doblan cuando hace falta","Ayudo si a cambio obtengo algo","Ayudo sin pensarlo, es lo que se hace por los tuyos"] },
+    { q: "Te enfrentas a algo que no entiendes del todo.",
+      opts: ["Investigo hasta entenderlo","Lo enfrento aunque no lo entienda","Busco la forma de usarlo a mi favor","Pregunto a alguien de confianza antes de actuar"] },
+    { q: "¿Qué te da más miedo?",
+      opts: ["Quedarme sin respuestas","Quedarme sin nada nuevo que descubrir","Quedarme sin poder","Que algo le pase a los míos por mi culpa"] },
+    { q: "Un plan sale mal a mitad de camino.",
+      opts: ["Me detengo a repensar la estrategia","Improviso sobre la marcha","Empujo más fuerte hasta que funcione","Me aseguro que todos estén bien antes de seguir"] },
+    { q: "¿Qué prefieres liderar?",
+      opts: ["Una investigación","Una expedición","Una causa","Un equipo"] },
+    { q: "Si pudieras tener un solo don, ¿cuál sería?",
+      opts: ["Saberlo todo","Ir a cualquier lugar","Tener control total de una situación","Proteger siempre a los que quiero"] }
+  ];
+
+  let current = 0;
+  let userName = "";
+  const scores = { sapientia:0, thalassus:0, ambitus:0, ursus:0 };
+
+  const screens = {
+    welcome: document.getElementById('screen-welcome'),
+    quiz: document.getElementById('screen-quiz'),
+    result: document.getElementById('screen-result')
+  };
+
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+  }
+
+  // Welcome
+  const nameInput = document.getElementById('name-input');
+  const btnStart = document.getElementById('btn-start');
+
+  nameInput.addEventListener('input', () => {
+    btnStart.disabled = nameInput.value.trim().length === 0;
+  });
+  nameInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && !btnStart.disabled) startQuiz();
+  });
+
+  btnStart.addEventListener('click', startQuiz);
+
+  function startQuiz(){
+    userName = nameInput.value.trim() || "viajero";
+    current = 0;
+    ORDER.forEach(h => scores[h] = 0);
+    showScreen('quiz');
+    renderQuestion();
+  }
+
+  // Quiz
+  const questionText = document.getElementById('question-text');
+  const optionsContainer = document.getElementById('options-container');
+  const progressNum = document.getElementById('progress-num');
+  const progressFill = document.getElementById('progress-fill');
+
+  function renderQuestion(){
+    const item = QUESTIONS[current];
+    questionText.textContent = item.q;
+    progressNum.textContent = (current+1) + " / " + QUESTIONS.length;
+    progressFill.style.width = ((current) / QUESTIONS.length * 100) + "%";
+
+    optionsContainer.innerHTML = "";
+    item.opts.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => selectOption(ORDER[i]));
+      optionsContainer.appendChild(btn);
+    });
+  }
+
+  function selectOption(house){
+    scores[house]++;
+    current++;
+    if(current < QUESTIONS.length){
+      renderQuestion();
+    } else {
+      progressFill.style.width = "100%";
+      setTimeout(showResult, 250);
+    }
+  }
+
+  // Result
+  function computeWinner(){
+    let winner = ORDER[0];
+    ORDER.forEach(h => { if(scores[h] > scores[winner]) winner = h; });
+    return winner;
+  }
+
+  function paintSigil(sigilEl, house){
+    const info = HOUSES[house];
+    sigilEl.querySelectorAll('.core').forEach(path => {
+      const h = path.getAttribute('data-house');
+      path.setAttribute('fill', h === house ? info.a : '#262b38');
+    });
+  }
+
+  function showResult(){
+    const winner = computeWinner();
+    const info = HOUSES[winner];
+
+    document.getElementById('result-greeting').textContent = "La Cámara ha visto en ti a alguien de";
+    document.getElementById('result-anim').textContent = info.anim;
+    document.getElementById('result-house').textContent = info.name;
+    document.getElementById('result-house').style.color = info.a;
+    document.getElementById('result-trait').textContent = info.trait;
+    document.getElementById('result-mottos').innerHTML = info.mottos.join("<br>");
+
+    const swatchRow = document.getElementById('result-swatches');
+    swatchRow.innerHTML = "";
+    [info.a, info.b].forEach(c => {
+      const s = document.createElement('div');
+      s.className = 'swatch';
+      s.style.background = c;
+      swatchRow.appendChild(s);
+    });
+
+    const greetingLine = document.getElementById('result-greeting');
+    greetingLine.textContent = userName + ", la Cámara ha visto en ti a alguien de";
+
+    paintSigil(document.getElementById('sigil-result'), winner);
+    showScreen('result');
+  }
+
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    nameInput.value = "";
+    btnStart.disabled = true;
+    showScreen('welcome');
+  });
+
+})();
+</script>
+
+</body>
+</html>
